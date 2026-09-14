@@ -1,0 +1,62 @@
+{
+  "users": [
+    {
+      "id": "admin-001",
+      "username": "DrukTube",
+      "name": "DrukTube \ud83c\udde7\ud83c\uddf9",
+      "email": "admin@druk.tube",
+      "passwordHash": null,
+      "role": "admin",
+      "verified": true,
+      "bio": "Official DrukTube account.",
+      "followers": [],
+      "following": [],
+      "createdAt": "2026-09-14T00:00:00.000Z"
+    }
+  ],
+  "sessions": [],
+  "videos": [],
+  "comments": [],
+  "announcements": [
+    {
+      "id": "ann-001",
+      "title": "Welcome to DrukTube \ud83c\udde7\ud83c\uddf9",
+      "body": "Bhutan. Your Stories. Your Platform.",
+      "createdAt": "2026-09-14T00:00:00.000Z"
+    }
+  ],
+  "monetization": {
+    "rules": {
+      "enabled": true,
+      "minFollowers": 100,
+      "minWatchHours": 500,
+      "minShortsViews90d": 100000,
+      "creatorSharePercent": 60,
+      "platformSharePercent": 40,
+      "minPayout": 500,
+      "currency": "BTN",
+      "adRatePerThousand": 2.5,
+      "tipFeePercent": 0,
+      "membershipPlatformPercent": 40,
+      "reviewRequired": true,
+      "liveGiftsEnabled": true,
+      "bobPaymentEnabled": true,
+      "bobCurrency": "BTN",
+      "bobCheckoutUrl": "",
+      "bobMerchantId": "",
+      "liveGiftMin": 10,
+      "liveGiftMax": 5000,
+      "liveDonationsEnabled": true,
+      "liveDonationMin": 10,
+      "liveDonationMax": 100000
+    },
+    "applications": [],
+    "ledger": [],
+    "tips": [],
+    "memberships": [],
+    "payouts": [],
+    "liveGiftOrders": []
+  },
+  "viewEvents": [],
+  "chatMessages": []
+}
