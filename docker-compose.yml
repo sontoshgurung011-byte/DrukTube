@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: druktube
+      POSTGRES_USER: druktube
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - druktube-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U druktube -d druktube"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  druktube:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - druktube-data:/app/data
+      - druktube-uploads:/app/uploads
+      - druktube-processed:/app/processed
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["npm", "run", "worker"]
+    env_file:
+      - .env
+    volumes:
+      - druktube-data:/app/data
+      - druktube-uploads:/app/uploads
+      - druktube-processed:/app/processed
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  druktube-data:
+  druktube-uploads:
+  druktube-postgres:
+  druktube-processed:
