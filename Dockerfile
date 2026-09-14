@@ -3,7 +3,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
 RUN apk add --no-cache ffmpeg
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 COPY . .
 RUN mkdir -p /app/data /app/uploads
 EXPOSE 3000
