@@ -1,0 +1,10 @@
+{
+  "name": "DrukTube 🇧🇹",
+  "short_name": "DrukTube",
+  "description": "Bhutan. Your Stories. Your Platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "icons": []
+}
