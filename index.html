@@ -174,8 +174,7 @@ async function submitAuth(){
     if(password.length<8){$("auths").textContent="Password must be at least 8 characters.";return}
   }else if(!login||!loginPassword){$("auths").textContent="Enter your username/email and password.";return}
   const button=$("authgo");button.disabled=true;button.textContent=is?"Creating…":"Signing in…";
-  try{
-    const body=is?{username,name:name||username,email,password}:{login,password:loginPassword};
+  const body=is?{username,name:name||username,email,phone,password}:{login,password:loginPassword};
     const r=await fetch(is?"/api/auth/register":"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     const j=await r.json().catch(()=>({error:"Unexpected server response"}));
     if(!r.ok){$("auths").textContent=j.error||"Authentication failed.";return}
