@@ -1,6 +1,6 @@
 {
   "name": "druk-tube",
-  "version": "7.3.2",
+  "version": "7.3.7",
   "private": true,
   "scripts": {
     "start": "node server.js",
@@ -9,7 +9,9 @@
     "process:video": "node scripts/process-video.js",
     "worker": "node worker.js",
     "jobs:retry": "node worker.js --retry-failed",
-    "test:smoke": "node scripts/smoke-test.js"
+    "test:smoke": "node scripts/smoke-test.js",
+    "validate": "node scripts/validate-release.js",
+    "test": "npm run validate"
   },
   "dependencies": {
     "express": "^5.1.0",
