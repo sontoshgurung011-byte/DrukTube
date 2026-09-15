@@ -47,9 +47,11 @@ app.post("/api/auth/register",(q,r)=>{
     const d=db();
     d.users=Array.isArray(d.users)?d.users:[];
     const usernameKey=username.toLowerCase();
-    if(d.users.some(u=>String(u?.username||"").trim().toLowerCase()===usernameKey||String(u?.email||"").trim().toLowerCase()===email))return r.status(409).json({error:"Username or email already exists"});
+    const phone=String(body.phone||"").trim();
+const phoneKey=phone.replace(/[^\d+]/g,"");
+    if(d.users.some(u=>String(u?.username||"").trim().toLowerCase()===usernameKey||String(u?.email||"").trim().toLowerCase()===email||(phoneKey&&String(u?.phone||"").replace(/[^\d+]/g,"")===phoneKey)))return r.status(409).json({error:"Username, email or phone number already exists"});
     const isOwner=email===OWNER_EMAIL;
-    const u={id:"user-"+Date.now()+"-"+crypto.randomBytes(4).toString("hex"),username,name:name||username,email,passwordHash:hash(password),role:isOwner?"owner":"user",verified:isOwner,bio:isOwner?OWNER_NAME:"",followers:[],following:[],createdAt:new Date().toISOString()};
+    const u={id:"user-"+Date.now()+"-"+crypto.randomBytes(4).toString("hex"),username,name:name||username,email,phone,passwordHash:hash(password),role:isOwner?"owner":"user",verified:isOwner,bio:isOwner?OWNER_NAME:"",followers:[],following:[],createdAt:new Date().toISOString()};
     d.users.push(u);
     const t=token();
     d.sessions=Array.isArray(d.sessions)?d.sessions:[];
