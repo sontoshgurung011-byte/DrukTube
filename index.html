@@ -165,7 +165,7 @@ function reg(x){$("login").style.display=x?"none":"block";$("reg").style.display
 function toggleAuth(){reg($("auth").dataset.reg!=="1");$("auths").textContent=""}
 async function submitAuth(){
   const is=$("auth").dataset.reg==="1";
-  const username=$("ru").value.trim(),name=$("rn").value.trim(),email=$("re").value.trim(),password=$("rp").value;
+  const username=$("ru").value.trim(),name=$("rn").value.trim(),email=$("re").value.trim(),phone=$("rph").value.trim(),password=$("rp").value;
   const login=$("li").value.trim(),loginPassword=$("lp").value;
   $("auths").textContent="";
   if(is){
