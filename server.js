@@ -38,7 +38,29 @@ app.get("/api/media",auth,async(q,r)=>{try{let items=(db().mediaObjects||[]).fil
 app.get("/api/data-layer",(_,r)=>r.json({driver:runtime.enabled?"postgres":"json",postgresConfigured:!!process.env.DATABASE_URL,cutover:runtime.enabled?"active":"fallback",writeMode:runtime.enabled?"postgres+json-mirror":"json",featureData:runtime.enabled?"postgres":"json"}));
 app.get("/api/data-layer/features",async(_,r)=>{if(!runtime.enabled)return r.json({driver:"json",features:[]});try{const counts=await runtime.featureCounts();r.json({driver:"postgres",features:counts})}catch(e){r.status(503).json({error:"PostgreSQL feature store unavailable"})}});
 app.get("/api/release",(_,r)=>r.json({name:"DrukTube",version:"7.3.7",build:77,status:"production-ready",features:["media-cdn-delivery","signed-media-urls","etag-caching","postgres-runtime-cutover","feature-data-postgres","media-upload-pipeline","s3-compatible-object-storage","dual-write-safety","persistent-data-foundation","object-storage-ready","image-upload-pipeline","optimized-media-delivery","video-probing","range-streaming","ffmpeg-hls-processing","adaptive-qualities","adaptive-player","quality-selector","creator-upload-processing","processing-progress","hls-fallback","premium-ui","dark-mode","pwa","creator-tools","moderation","personalization","production-readiness","creator-monetization","tips","live-gifts","bob-payments","memberships","payouts","monetization-rules","earnings-ledger"]}));
-app.post("/api/auth/register",(q,r)=>{let{x}=q.body||{};let{username,name,email,password}=q.body||{};if(!username||!email||!password)return r.status(400).json({error:"Username, email and password are required"});if(password.length<8)return r.status(400).json({error:"Password must be at least 8 characters"});let d=db();if(d.users.some(u=>u.username.toLowerCase()==username.toLowerCase()||u.email.toLowerCase()==email.toLowerCase()))return r.status(409).json({error:"Username or email already exists"});let u={id:"user-"+Date.now(),username,name:name||username,email,passwordHash:hash(password),role:(String(email).trim().toLowerCase()===OWNER_EMAIL?"owner":"user"),verified:(String(email).trim().toLowerCase()===OWNER_EMAIL),bio:(String(email).trim().toLowerCase()===OWNER_EMAIL?OWNER_NAME:""),followers:[],following:[],createdAt:new Date().toISOString()};d.users.push(u);let t=token();d.sessions.push({token:t,userId:u.id,createdAt:new Date().toISOString()});save(d);r.status(201).json({user:pub(u),token:t})});
+app.post("/api/auth/register",(q,r)=>{
+  try{
+    const body=q.body&&typeof q.body==="object"?q.body:{};
+    const username=String(body.username||"").trim(),name=String(body.name||"").trim(),email=String(body.email||"").trim().toLowerCase(),password=String(body.password||"");
+    if(!username||!email||!password)return r.status(400).json({error:"Username, email and password are required"});
+    if(password.length<8)return r.status(400).json({error:"Password must be at least 8 characters"});
+    const d=db();
+    d.users=Array.isArray(d.users)?d.users:[];
+    const usernameKey=username.toLowerCase();
+    if(d.users.some(u=>String(u?.username||"").trim().toLowerCase()===usernameKey||String(u?.email||"").trim().toLowerCase()===email))return r.status(409).json({error:"Username or email already exists"});
+    const isOwner=email===OWNER_EMAIL;
+    const u={id:"user-"+Date.now()+"-"+crypto.randomBytes(4).toString("hex"),username,name:name||username,email,passwordHash:hash(password),role:isOwner?"owner":"user",verified:isOwner,bio:isOwner?OWNER_NAME:"",followers:[],following:[],createdAt:new Date().toISOString()};
+    d.users.push(u);
+    const t=token();
+    d.sessions=Array.isArray(d.sessions)?d.sessions:[];
+    d.sessions.push({token:t,userId:u.id,createdAt:new Date().toISOString()});
+    save(d);
+    return r.status(201).json({user:pub(u),token:t});
+  }catch(e){
+    console.error("Registration error:",e);
+    return r.status(500).json({error:"Account creation failed. Please try again.",details:process.env.NODE_ENV==="production"?undefined:String(e&&e.message||e)});
+  }
+});
 app.post("/api/auth/login",(q,r)=>{let{login,password}=q.body||{},d=db(),u=d.users.find(x=>x.username.toLowerCase()==(login||"").toLowerCase()||x.email.toLowerCase()==(login||"").toLowerCase());if(!u||u.disabled||!u.passwordHash||u.passwordHash!==hash(password||""))return r.status(401).json({error:u&&u.disabled?"This account is suspended":"Invalid username/email or password"});let t=token();d.sessions.push({token:t,userId:u.id,createdAt:new Date().toISOString()});save(d);r.json({user:pub(u),token:t})});
 app.post("/api/auth/logout",auth,(q,r)=>{let d=db();d.sessions=d.sessions.filter(s=>s.token!==q.sessionToken);save(d);r.json({ok:true})});
 app.get("/api/me",auth,(q,r)=>{let d=db(),pending=(d.verificationRequests||[]).find(x=>x.userId===q.user.id&&x.status==="pending");r.json({user:pub(q.user),verificationPending:!!pending});});
@@ -369,7 +391,12 @@ app.post('/api/jobs/:id/retry',auth,(req,res)=>{const j=jobQueue.list(500).find(
 app.post('/api/jobs/:id/cancel',auth,(req,res)=>{const j=jobQueue.list(500).find(x=>x.id===req.params.id);if(!j)return res.status(404).json({error:'Job not found'});if(j.payload?.userId!==req.user.id&&!isStaff(req.user))return res.status(403).json({error:'Not allowed'});const updated=jobQueue.update(j.id,{status:'cancelled',cancelledAt:new Date().toISOString()});res.json({ok:true,job:updated});});
 app.use(express.static(path.join(ROOT,"public")));app.get(/.*/,(_,r)=>r.sendFile(path.join(ROOT,"public","index.html")));
 app.use((e,_,r,__)=>r.status(400).json({error:e.message||"Request failed"}));
-const server=app.listen(PORT,"0.0.0.0",async()=>{try{if(runtime.enabled){await runtime.load(memoryDb);await runtime.loadFeatures(memoryDb);await runtime.loadMedia(memoryDb);}}catch(e){console.error("PostgreSQL startup load:",e.message)} try{const owner=db().users.find(u=>String(u.email||"").trim().toLowerCase()===OWNER_EMAIL); if(owner && (owner.role!=="owner" || owner.name!==OWNER_NAME || !owner.verified || owner.disabled)){owner.role="owner";owner.name=OWNER_NAME;owner.verified=true;owner.disabled=false;owner.owner=true;owner.ownerSince=owner.ownerSince||new Date().toISOString();owner.bio=owner.bio||OWNER_NAME;save(db());console.log("DrukTube owner provisioned for "+OWNER_EMAIL)}}catch(e){console.error("Owner provisioning:",e.message)} console.log("DrukTube 7.3.7: http://localhost:"+PORT)});
+const server=app.use((err,req,res,next)=>{
+  console.error("Unhandled API error:",err);
+  if(res.headersSent)return next(err);
+  res.status(500).json({error:"Server error. Please try again."});
+});
+app.listen(PORT,"0.0.0.0",async()=>{try{if(runtime.enabled){await runtime.load(memoryDb);await runtime.loadFeatures(memoryDb);await runtime.loadMedia(memoryDb);}}catch(e){console.error("PostgreSQL startup load:",e.message)} try{const owner=db().users.find(u=>String(u.email||"").trim().toLowerCase()===OWNER_EMAIL); if(owner && (owner.role!=="owner" || owner.name!==OWNER_NAME || !owner.verified || owner.disabled)){owner.role="owner";owner.name=OWNER_NAME;owner.verified=true;owner.disabled=false;owner.owner=true;owner.ownerSince=owner.ownerSince||new Date().toISOString();owner.bio=owner.bio||OWNER_NAME;save(db());console.log("DrukTube owner provisioned for "+OWNER_EMAIL)}}catch(e){console.error("Owner provisioning:",e.message)} console.log("DrukTube 7.3.7: http://localhost:"+PORT)});
 process.on("SIGTERM",()=>server.close(()=>process.exit(0)));
 process.on("SIGINT",()=>server.close(()=>process.exit(0)));
 
