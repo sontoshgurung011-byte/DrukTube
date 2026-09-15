@@ -255,6 +255,7 @@ setInterval(()=>{if($("watch")?.classList.contains("show"))loadChat()},5000);
 (function(){const saved=localStorage.getItem("drukTheme");const prefers=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;applyTheme(saved|| (prefers?"dark":"light"),false)})();
 function applyTheme(theme,save){document.documentElement.setAttribute("data-theme",theme);if(save)localStorage.setItem("drukTheme",theme);const b=$("themeBtn");if(b){b.textContent=theme==="dark"?"☀️":"🌙";b.setAttribute("aria-label",theme==="dark"?"Switch to light mode":"Switch to dark mode");b.title=theme==="dark"?"Switch to light mode":"Switch to dark mode"}}
 function toggleTheme(){const next=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";applyTheme(next,true)}
+  </script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.2/dist/hls.min.js" crossorigin="anonymous"></script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
 <script>let deferredInstall=null;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;const b=document.getElementById("installBtn");if(b)b.style.display="inline-block"});async function installApp(){if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;const b=document.getElementById("installBtn");if(b)b.style.display="none"}
